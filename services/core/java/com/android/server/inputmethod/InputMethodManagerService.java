@@ -2101,7 +2101,10 @@ public final class InputMethodManagerService extends IInputMethodManager.Stub
         return true;
     }
 
-    private List<InputMethodInfo> getInputMethodListInternal(@UserIdInt int userId,
+    @BinderThread
+    @NonNull
+    @Override
+    public List<InputMethodInfo> getInputMethodList(@UserIdInt int userId,
             @DirectBootAwareness int directBootAwareness) {
         if (UserHandle.getCallingUserId() != userId) {
             mContext.enforceCallingPermission(
@@ -2120,17 +2123,6 @@ public final class InputMethodManagerService extends IInputMethodManager.Stub
                 Binder.restoreCallingIdentity(ident);
             }
         }
-    }
-
-    @Override
-    public List<InputMethodInfo> getInputMethodList(@UserIdInt int userId) {
-        return getInputMethodListInternal(userId, DirectBootAwareness.AUTO);
-    }
-
-    @Override
-    public List<InputMethodInfo> getAwareLockedInputMethodList(@UserIdInt int userId,
-            @DirectBootAwareness int directBootAwareness) {
-        return getInputMethodListInternal(userId, directBootAwareness);
     }
 
     @Override
