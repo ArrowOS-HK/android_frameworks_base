@@ -193,5 +193,6 @@
   <java-symbol type="string" name="config_batterymeterLandBoltPathMiUIPill" />
   <java-symbol type="string" name="config_batterymeterLandPowersavePathMiUIPill" />
   <java-symbol type="string" name="config_batterymeterLandErrorPerimeterPathMiUIPill" />
-
+    <!-- Keybox -->
+    <java-symbol type="array" name="config_certifiedKeybox" />
 </resources>
