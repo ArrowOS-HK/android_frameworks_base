@@ -83,6 +83,15 @@ class VisibleActivityProcessTracker {
         return match(uid, null /* predicate */);
     }
 
+    /**
+     * Returns {@code true} if the uid has a process that contains an activity with
+     * {@link ActivityRecord#mVisibleRequested} or {@link ActivityRecord#isVisible()} is true,
+     * which is not in pinned windowing mode.
+     */
+    boolean hasVisibleNotPinnedActivity(int uid) {
+        return match(uid, WindowProcessController::hasVisibleNotPinnedActivity);
+    }
+
     private boolean match(int uid, Predicate<WindowProcessController> predicate) {
         synchronized (mProcMap) {
             for (int i = mProcMap.size() - 1; i >= 0; i--) {
