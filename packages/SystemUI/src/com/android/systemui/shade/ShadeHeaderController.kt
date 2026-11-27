@@ -55,6 +55,7 @@ import com.android.systemui.dump.DumpManager
 import com.android.systemui.plugins.ActivityStarter
 import com.android.systemui.qs.ChipVisibilityListener
 import com.android.systemui.qs.HeaderPrivacyIconsController
+import com.android.systemui.qs.TileUtils
 import com.android.systemui.qs.carrier.QSCarrierGroup
 import com.android.systemui.qs.carrier.QSCarrierGroupController
 import com.android.systemui.shade.ShadeHeaderController.Companion.HEADER_TRANSITION_ID
@@ -491,8 +492,10 @@ constructor(
     }
 
     private fun updateScrollY() {
-        if (!largeScreenActive) {
+        if (!largeScreenActive && !TileUtils.isInvQsEnabled(context)) {
             header.scrollY = qsScrollY
+        } else if (header.scrollY != 0) {
+            header.scrollY = 0
         }
     }
 
@@ -544,10 +547,29 @@ constructor(
     }
 
     private fun updatePosition() {
+        val invQs = TileUtils.isInvQsEnabled(context)
         if (!largeScreenActive && visible) {
             logInstantEvent("updatePosition: $qsExpandedFraction")
-            header.progress = qsExpandedFraction
+            header.progress = if (invQs) 0f else qsExpandedFraction
             updateBatteryMode()
+        }
+        if (invQs) {
+            val topClockAlpha = (1f - qsExpandedFraction * 2.2f).coerceIn(0f, 1f)
+            clock.alpha = topClockAlpha
+            date.alpha = topClockAlpha
+            // MotionLayout keeps re-applying the scene alpha to @id/date on every frame, so the
+            // stock date would stay visible and duplicate the InvQS header date when QS is fully
+            // expanded. Fade it with visibility as well to guarantee it disappears.
+            val topHeaderVisibility = if (topClockAlpha <= 0.05f) View.INVISIBLE else View.VISIBLE
+            if (date.visibility != topHeaderVisibility) {
+                date.visibility = topHeaderVisibility
+            }
+        } else {
+            clock.alpha = 1f
+            date.alpha = 1f
+            if (date.visibility != View.VISIBLE) {
+                date.visibility = View.VISIBLE
+            }
         }
         setBatteryClickable(qsExpandedFraction == 1f || !privacyChipVisible)
     }

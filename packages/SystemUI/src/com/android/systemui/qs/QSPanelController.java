@@ -121,6 +121,7 @@ public class QSPanelController extends QSPanelControllerBase<QSPanel> {
         });
 
         mView.updateResources();
+        mView.bindInvQsHost(mHost);
         if (mView.isListening()) {
             refreshAllTiles();
         }

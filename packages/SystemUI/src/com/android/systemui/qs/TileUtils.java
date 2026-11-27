@@ -25,14 +25,20 @@ import android.provider.Settings;
 
 public class TileUtils {
 
+   public static boolean isInvQsEnabled(Context context) {
+        return Settings.System.getIntForUser(context.getContentResolver(),
+            "qs_invqs_enabled", 1, UserHandle.USER_CURRENT) != 0;
+   }
+
+   public static boolean isExtendedQsSplitMode(Context context) {
+        return false;
+   }
+
    public static boolean isQsWidgetsEnabled(Context context) {
-        return Settings.System.getIntForUser(context.getContentResolver(), 
-            "qs_widgets_enabled",0, UserHandle.USER_CURRENT) != 0;
+        return false;
    }
 
    public static boolean canShowQsWidgets(Context context) {
-        return isQsWidgetsEnabled(context)
-            && context.getResources().getConfiguration().orientation 
-            != Configuration.ORIENTATION_LANDSCAPE;
+        return false;
    }
 }

@@ -45,6 +45,7 @@ import com.android.internal.widget.RemeasuringLinearLayout;
 import com.android.systemui.Dependency;
 import com.android.systemui.R;
 import com.android.systemui.plugins.qs.QSTile;
+import com.android.systemui.qs.inv.InvQsPanelView;
 import com.android.systemui.qs.logging.QSLogger;
 import com.android.systemui.settings.brightness.BrightnessSliderController;
 import com.android.systemui.tuner.TunerService;
@@ -100,6 +101,8 @@ public class QSPanel extends LinearLayout implements Tunable {
     @Nullable
     protected View mFooter;
     private View mQsControlsLayoutShade;
+    @Nullable
+    private InvQsPanelView mInvQsPanelView;
 
     @Nullable
     private PageIndicator mFooterPageIndicator;
@@ -325,7 +328,8 @@ public class QSPanel extends LinearLayout implements Tunable {
     }
 
     private void updateViewPositions() {
-        if (mChildrenLayoutTop == null || mChildrenLayoutTop.isEmpty()) {
+        if (TileUtils.isInvQsEnabled(mContext)
+                || mChildrenLayoutTop == null || mChildrenLayoutTop.isEmpty()) {
             return;
         }
         // Adjust view positions based on tile squishing
@@ -371,7 +375,8 @@ public class QSPanel extends LinearLayout implements Tunable {
                 boolean value =
                        TunerService.parseInteger(newValue, 1) >= 1;
                 if (mBrightnessView != null) {
-                    mBrightnessView.setVisibility(value ? VISIBLE : GONE);
+                    mBrightnessView.setVisibility(
+                            !TileUtils.isInvQsEnabled(mContext) && value ? VISIBLE : GONE);
                 }
                 break;
             case QS_BRIGHTNESS_SLIDER_POSITION:
@@ -431,13 +436,17 @@ public class QSPanel extends LinearLayout implements Tunable {
         if (mTileLayout != null) {
             mTileLayout.updateResources();
         }
+        updateInvQsVisibility();
     }
 
     protected void updatePadding() {
         final Resources res = mContext.getResources();
-        int paddingTop = res.getDimensionPixelSize(TileUtils.canShowQsWidgets(mContext)
-            ? R.dimen.qs_controls_padding_top
-            : R.dimen.qs_panel_padding_top);
+        final boolean invQs = TileUtils.isInvQsEnabled(mContext);
+        int paddingTop = invQs
+                ? res.getDimensionPixelSize(R.dimen.inv_qs_panel_padding_top)
+                : res.getDimensionPixelSize(TileUtils.canShowQsWidgets(mContext)
+                        ? R.dimen.qs_controls_padding_top
+                        : R.dimen.qs_panel_padding_top);
         int paddingBottom = res.getDimensionPixelSize(R.dimen.qs_panel_padding_bottom);
         setPaddingRelative(getPaddingStart(),
                 paddingTop,
@@ -462,12 +471,43 @@ public class QSPanel extends LinearLayout implements Tunable {
     }
 
     private void updateControlsLayoutVisibility() {
+        updateInvQsVisibility();
         if (mQsControlsLayoutShade != null) {
             boolean isLandscape = mContext.getResources().getConfiguration().orientation 
                 == Configuration.ORIENTATION_LANDSCAPE;
-            if (mQsControlsLayoutShade != null) {
-                mQsControlsLayoutShade.setVisibility(TileUtils.isQsWidgetsEnabled(mContext) && isLandscape ? View.VISIBLE : View.GONE);
-            }
+            mQsControlsLayoutShade.setVisibility(
+                    !TileUtils.isInvQsEnabled(mContext)
+                            && TileUtils.isQsWidgetsEnabled(mContext)
+                            && isLandscape ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    public void bindInvQsHost(QSHost host) {
+        if (mInvQsPanelView != null) {
+            mInvQsPanelView.bindHost(host);
+        }
+        updateInvQsVisibility();
+    }
+
+    public void setInvQsListening(boolean listening) {
+        if (mInvQsPanelView != null) {
+            mInvQsPanelView.setListening(listening);
+        }
+    }
+
+    private void updateInvQsVisibility() {
+        boolean invQs = TileUtils.isInvQsEnabled(mContext);
+        if (mInvQsPanelView != null) {
+            mInvQsPanelView.setVisibility(invQs ? View.VISIBLE : View.GONE);
+        }
+        if (mTileLayout instanceof View) {
+            ((View) mTileLayout).setVisibility(invQs ? View.GONE : View.VISIBLE);
+        }
+        if (mBrightnessView != null && invQs) {
+            mBrightnessView.setVisibility(View.GONE);
+        }
+        if (mFooter != null && invQs) {
+            mFooter.setVisibility(View.GONE);
         }
     }
 
@@ -476,6 +516,8 @@ public class QSPanel extends LinearLayout implements Tunable {
         super.onFinishInflate();
         mFooter = findViewById(R.id.qs_footer);
         mQsControlsLayoutShade = findViewById(R.id.qs_controls_layout_shade);
+        mInvQsPanelView = findViewById(R.id.invos_qs_panel);
+        updateInvQsVisibility();
     }
 
     private void updateHorizontalLinearLayoutMargins() {
@@ -508,6 +550,13 @@ public class QSPanel extends LinearLayout implements Tunable {
     }
 
     private void switchAllContentToParent(ViewGroup parent, QSTileLayout newLayout) {
+        if (TileUtils.isInvQsEnabled(mContext)) {
+            if (mInvQsPanelView != null) {
+                switchToParent(mInvQsPanelView, this, 0);
+            }
+            updateInvQsVisibility();
+            return;
+        }
         int index = parent == this ? mMovableContentStartIndex : 0;
         boolean isLandscape = mContext.getResources().getConfiguration().orientation 
             == Configuration.ORIENTATION_LANDSCAPE;
@@ -547,7 +596,7 @@ public class QSPanel extends LinearLayout implements Tunable {
     private void reAttachMediaHost(ViewGroup hostView, boolean horizontal) {
         ViewGroup currentParent = (ViewGroup) hostView.getParent();
         ViewGroup newParent = horizontal ? mHorizontalLinearLayout : this;
-        if (TileUtils.isQsWidgetsEnabled(mContext)) {
+        if (TileUtils.isInvQsEnabled(mContext) || TileUtils.isQsWidgetsEnabled(mContext)) {
             if (currentParent != newParent) {
                 if (currentParent != null) {
                     currentParent.removeView(hostView);

@@ -24,6 +24,7 @@
     android:clickable="false"
     android:focusable="true"
     android:paddingLeft="@dimen/qs_panel_padding"
+    android:paddingTop="@dimen/inv_shade_header_top_padding"
     android:paddingRight="@dimen/qs_panel_padding"
     android:visibility="gone"
     android:theme="@style/QSHeaderTheme"

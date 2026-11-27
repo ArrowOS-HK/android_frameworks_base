@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="inv_shade_header_top_padding">0.0dip</dimen>
+    <dimen name="inv_header_clock_text_size">28.0sp</dimen>
+    <dimen name="inv_qs_panel_margin_top">0.0dip</dimen>
+    <dimen name="inv_header_normal_padding_top">4.0dip</dimen>
+    <dimen name="inv_edit_header_margin_top">4.0dip</dimen>
+    <dimen name="inv_panel_settings_sheet_margin_top">16.0dip</dimen>
+    <dimen name="inv_panel_settings_sheet_width_landscape">460.0dip</dimen>
+    <dimen name="inv_qs_control_grid_cell_size">58.0dip</dimen>
+    <dimen name="inv_qs_control_grid_item_spacing">12.0dip</dimen>
+    <dimen name="inv_qs_native_tile_size">56.0dip</dimen>
+</resources>

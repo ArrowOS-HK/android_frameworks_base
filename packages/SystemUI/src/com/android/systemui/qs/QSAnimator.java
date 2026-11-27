@@ -332,7 +332,8 @@ public class QSAnimator implements QSHost.Callback, PagedTileLayout.PageListener
 
         mLastQQSTileHeight = 0;
 
-        if (mQsPanelController.areThereTiles()) {
+        if (mQsPanelController.areThereTiles()
+                && !TileUtils.isInvQsEnabled(mQuickQsPanel.getContext())) {
             for (QSTile tile : tiles) {
                 QSTileView tileView = mQsPanelController.getTileView(tile);
 
@@ -463,6 +464,10 @@ public class QSAnimator implements QSHost.Callback, PagedTileLayout.PageListener
 
         animateBrightnessSlider();
 
+        boolean invQsEnabled = TileUtils.isInvQsEnabled(mQuickQsPanel.getContext());
+        if (invQsEnabled) {
+            firstPageBuilder.addFloat(mQuickQsPanel, "alpha", 1f, 0f);
+        }
         mFirstPageAnimator = firstPageBuilder
                 // Fade in the tiles/labels as we reach the final position.
                 .addFloat(tileLayout, "alpha", 0, 1)
@@ -472,7 +477,7 @@ public class QSAnimator implements QSHost.Callback, PagedTileLayout.PageListener
 
         Builder builder = new Builder().setStartDelay(EXPANDED_TILE_DELAY);
         // Fade in the media player as we reach the final position
-        if (mQsWidgetsEnabled) {
+        if (mQsWidgetsEnabled || invQsEnabled) {
             mQsPanelController.mMediaHost.hostView.setAlpha(0f);
         } else {
             if (mQsPanelController.shouldUseHorizontalLayout()
@@ -596,6 +601,13 @@ public class QSAnimator implements QSHost.Callback, PagedTileLayout.PageListener
         mBrightnessOpacityAnimator = null;
         View qsBrightness = mQsPanelController.getBrightnessView();
         View qqsBrightness = mQuickQSPanelController.getBrightnessView();
+
+        if (TileUtils.isInvQsEnabled(mQuickQsPanel.getContext())) {
+            if (qsBrightness != null) {
+                qsBrightness.setVisibility(View.GONE);
+            }
+            return;
+        }
 
         if (mTunerService.getValue(QSPanel.QS_SHOW_BRIGHTNESS_SLIDER, 1) == 0) {
             qsBrightness.setVisibility(View.GONE);

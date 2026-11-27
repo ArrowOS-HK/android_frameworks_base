@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/inv_settings_overlay" android:layout_width="match_parent" android:layout_height="match_parent" android:clickable="true" android:focusable="true" android:focusableInTouchMode="true" android:clipChildren="true" android:clipToPadding="true">
+    <ScrollView android:id="@+id/bottom_sheet_root" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="bottom|center_horizontal" android:layout_marginTop="@dimen/inv_panel_settings_sheet_margin_top" android:background="@drawable/inv_bg_panel_bottom_sheet" android:clipChildren="true" android:clipToPadding="true" android:clipToOutline="true" android:fillViewport="true" android:paddingLeft="16dp" android:paddingTop="18dp" android:paddingRight="16dp" android:paddingBottom="28dp" android:overScrollMode="never" android:scrollbars="none">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/transparent" android:clipChildren="true" android:clipToPadding="true" android:orientation="vertical" android:paddingLeft="0dp" android:paddingTop="0dp" android:paddingRight="0dp" android:paddingBottom="0dp">
+            <View android:layout_width="44dp" android:layout_height="4dp" android:layout_gravity="center_horizontal" android:layout_marginBottom="0dp" android:background="@drawable/inv_bg_grabber" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:background="@null" android:clipChildren="true" android:clipToPadding="true" android:clipToOutline="false" android:orientation="vertical" android:paddingLeft="0dp" android:paddingTop="0dp" android:paddingRight="0dp" android:paddingBottom="8dp">
+                <LinearLayout android:id="@+id/preview_tile_strip" android:layout_width="match_parent" android:layout_height="wrap_content" android:clipChildren="false" android:clipToPadding="false" android:gravity="center" android:orientation="horizontal" android:paddingTop="4dp" android:paddingBottom="12dp" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/transparent" android:clipChildren="true" android:clipToPadding="true" android:orientation="vertical" android:padding="18dp">
+                    <FrameLayout android:layout_width="match_parent" android:layout_height="44dp">
+                        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="start|center_vertical" android:gravity="center_vertical" android:orientation="horizontal">
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/inv_ic_settings" android:tint="@color/inv_icon_primary" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="Settings" android:textColor="@color/inv_text_primary" android:textSize="16sp" android:fontFamily="google-sans-medium" />
+                        </LinearLayout> 
+                        <ImageButton android:id="@+id/btn_back" android:layout_width="40dp" android:layout_height="40dp" android:layout_gravity="end|center_vertical" android:background="@drawable/inv_bg_btn_done" android:contentDescription="Done" android:padding="9dp" android:scaleType="centerInside" android:src="@drawable/inv_ic_done" android:tint="@color/inv_icon_on_accent" />
+                    </FrameLayout>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Show tile labels" android:textColor="@color/inv_text_primary" android:textSize="15sp" />
+                        <Switch android:id="@+id/switch_labels" android:layout_width="56dp" android:layout_height="32dp" android:minWidth="56dp" android:minHeight="32dp" android:gravity="center" android:showText="false" android:splitTrack="false" android:switchMinWidth="52dp" android:switchPadding="0dp" android:thumbTextPadding="0dp" android:thumb="@drawable/inv_switch_thumb" android:track="@drawable/inv_switch_track" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="1x Pulldown rows" android:textColor="@color/inv_text_primary" android:textSize="15sp" />
+                        <TextView android:id="@+id/btn_qqs_2" android:layout_width="44dp" android:layout_height="32dp" android:gravity="center" android:text="2" android:textSize="14sp" android:fontFamily="google-sans-medium" android:layout_marginEnd="8dp" />
+                        <TextView android:id="@+id/btn_qqs_4" android:layout_width="44dp" android:layout_height="32dp" android:gravity="center" android:text="4" android:textSize="14sp" android:fontFamily="google-sans-medium" />
+                    </LinearLayout>
+                    </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

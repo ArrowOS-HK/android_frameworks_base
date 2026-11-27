@@ -64,6 +64,7 @@ import com.android.systemui.media.controls.pipeline.MediaDataManager;
 import com.android.systemui.media.controls.ui.MediaHierarchyManager;
 import com.android.systemui.plugins.FalsingManager;
 import com.android.systemui.plugins.qs.QS;
+import com.android.systemui.qs.TileUtils;
 import com.android.systemui.screenrecord.RecordingController;
 import com.android.systemui.shade.transition.ShadeTransitionController;
 import com.android.systemui.statusbar.LockscreenShadeTransitionController;
@@ -450,8 +451,34 @@ public class QuickSettingsController {
         return mQs.getHeader().getHeight();
     }
 
+    /** Returns whether Extended QS two-side split pulldown is active (left=notifs, right=QS). */
+    public boolean isExtendedSplitModeActive() {
+        return !mSplitShadeEnabled && mQs != null
+                && TileUtils.isExtendedQsSplitMode(mQs.getView().getContext());
+    }
+
+    /** True when swiping from left half in Split Mode: show Notifications only (hide QQS/QS). */
+    public boolean isSplitLeftNotificationsOnly() {
+        return isExtendedSplitModeActive()
+                && mBarState == SHADE
+                && !mExpanded
+                && !mExpandImmediate
+                && !mExpansionFromOverscroll
+                && computeExpansionFraction() == 0f;
+    }
+
+    /** True when swiping from right half in Split Mode: show Extended QS only (hide Notifications). */
+    public boolean isExtendedSplitQsOnly() {
+        return isExtendedSplitModeActive()
+                && mBarState == SHADE
+                && (mExpandImmediate || mExpanded);
+    }
+
     /** Returns the padding of the stackscroller when unlocked */
     int getUnlockedStackScrollerPadding() {
+        if (isSplitLeftNotificationsOnly()) {
+            return Math.max(mStatusBarMinHeight, mAmbientState.getStackTopMargin());
+        }
         return (mQs != null ? mQs.getHeader().getHeight() : 0) + mPeekHeight;
     }
 
@@ -524,13 +551,17 @@ public class QuickSettingsController {
                         MotionEvent.BUTTON_SECONDARY) || event.isButtonPressed(
                         MotionEvent.BUTTON_TERTIARY));
 
-        final float w = mQs.getView().getMeasuredWidth();
+        final float measuredW = mQs != null ? mQs.getView().getMeasuredWidth() : 0f;
+        final float w = measuredW > 0f ? measuredW : mPanelView.getWidth();
         final float x = event.getX();
-        float region = w * 1.f / 4.f; // TODO overlay region fraction?
+        final boolean invQsEnabled = mQs != null
+                && TileUtils.isInvQsEnabled(mQs.getView().getContext());
+        final boolean rtl = mQs != null && mQs.getView().isLayoutRtl();
+        float region = w * 1.f / 4.f;
         boolean showQsOverride = false;
 
-        if (mOneFingerQsIntercept) {
-                showQsOverride = mQs.getView().isLayoutRtl() ? x < region : w - region < x;
+        if (!invQsEnabled && mOneFingerQsIntercept) {
+            showQsOverride = rtl ? x < region : w - region < x;
         }
 
         showQsOverride &= mBarState == StatusBarState.SHADE;
@@ -625,6 +656,12 @@ public class QuickSettingsController {
         if (getExpanded()) {
             return onHeader || (yDiff < 0 && isTouchInQsArea(x, y));
         } else {
+            if (mQs != null && TileUtils.isExtendedQsSplitMode(mQs.getView().getContext())) {
+                final float width = mPanelView.getWidth();
+                final boolean rtl = mQs.getView().isLayoutRtl();
+                final boolean rightSide = rtl ? x < width * 0.5f : x > width * 0.5f;
+                return onHeader && rightSide;
+            }
             return onHeader;
         }
     }
@@ -927,7 +964,7 @@ public class QuickSettingsController {
     }
 
     void updateQsState() {
-        boolean qsFullScreen = mExpanded && !mSplitShadeEnabled;
+        boolean qsFullScreen = (mExpanded || isExtendedSplitQsOnly()) && !mSplitShadeEnabled;
         mNotificationStackScrollLayoutController.setQsFullScreen(qsFullScreen);
         mNotificationStackScrollLayoutController.setScrollingEnabled(
                 mBarState != KEYGUARD && (!qsFullScreen || mExpansionFromOverscroll));
@@ -1071,9 +1108,11 @@ public class QuickSettingsController {
     private void setClippingBounds() {
         float qsExpansionFraction = computeExpansionFraction();
         final int qsPanelBottomY = calculateBottomPosition(qsExpansionFraction);
-        // Split shade has no QQS
+        final boolean splitLeftOnly = isSplitLeftNotificationsOnly();
+        // Split shade and Extended split left-notifications mode have no QQS
         final boolean qqsVisible =
-                !mSplitShadeEnabled && qsExpansionFraction == 0 && qsPanelBottomY > 0;
+                !mSplitShadeEnabled && !splitLeftOnly
+                        && qsExpansionFraction == 0 && qsPanelBottomY > 0;
         final boolean qsVisible = qsExpansionFraction > 0;
         final boolean qsOrQqsVisible = qqsVisible || qsVisible;
         checkCorrectScrimVisibility(qsExpansionFraction);
@@ -1176,13 +1215,15 @@ public class QuickSettingsController {
                     ? (int) (top - currentTranslation - mQsFrame.getTop()) : 0;
             int clipBottom = mEnableClipping
                     ? (int) (bottom - currentTranslation - mQsFrame.getTop()) : 0;
-            mVisible = qsVisible;
-            mQs.setQsVisible(qsVisible);
+            boolean hideQsForSplitLeft = isSplitLeftNotificationsOnly();
+            mVisible = qsVisible && !hideQsForSplitLeft;
+            mQsFrame.setVisibility(hideQsForSplitLeft ? View.INVISIBLE : View.VISIBLE);
+            mQs.setQsVisible(mVisible);
             mQs.setFancyClipping(
                     clipTop,
                     clipBottom,
                     radius,
-                    qsVisible && !mSplitShadeEnabled);
+                    mVisible && !mSplitShadeEnabled);
 
         }
 
@@ -1190,7 +1231,11 @@ public class QuickSettingsController {
         // (e.g. portrait tablet) so the rounded corners are not visible at the bottom,
         // in this case they are rendered off-screen
         final int notificationsScrimBottom = mSplitShadeEnabled ? bottom : bottom + radius;
-        mScrimController.setNotificationsBounds(left, top, right, notificationsScrimBottom);
+        if (isExtendedSplitQsOnly()) {
+            mScrimController.setNotificationsBounds(left, bottom, right, bottom);
+        } else {
+            mScrimController.setNotificationsBounds(left, top, right, notificationsScrimBottom);
+        }
 
         if (mApplyClippingImmediatelyListener != null) {
             mApplyClippingImmediatelyListener.onQsClippingImmediatelyApplied(clipStatusView,
@@ -1577,9 +1622,10 @@ public class QuickSettingsController {
         if (action == MotionEvent.ACTION_DOWN && isFullyCollapsed && isExpansionEnabled()) {
             mTwoFingerExpandPossible = true;
         }
+        float openYLimit = isExtendedSplitModeActive()
+                ? (mStatusBarMinHeight * 1.6f) : mStatusBarMinHeight;
         if (mTwoFingerExpandPossible && isOpenQsEvent(event)
-                && event.getY(event.getActionIndex())
-                < mStatusBarMinHeight) {
+                && event.getY(event.getActionIndex()) < openYLimit) {
             mMetricsLogger.count(COUNTER_PANEL_OPEN_QS, 1);
             setExpandImmediate(true);
             mNotificationStackScrollLayoutController.setShouldShowShelfOnly(!mSplitShadeEnabled);
@@ -2065,8 +2111,8 @@ public class QuickSettingsController {
             NotificationStackScrollLayout.OnOverscrollTopChangedListener {
         @Override
         public void onOverscrollTopChanged(float amount, boolean isRubberbanded) {
-            // When in split shade, overscroll shouldn't carry through to QS
-            if (mSplitShadeEnabled) {
+            // When in split shade or split left notifications-only mode, overscroll shouldn't drag QS open
+            if (mSplitShadeEnabled || isExtendedSplitModeActive()) {
                 return;
             }
             cancelExpansionAnimation();

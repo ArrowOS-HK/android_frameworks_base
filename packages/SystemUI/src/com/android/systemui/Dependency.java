@@ -69,6 +69,7 @@ import com.android.systemui.power.EnhancedEstimates;
 import com.android.systemui.power.PowerUI;
 import com.android.systemui.privacy.PrivacyItemController;
 import com.android.systemui.qs.ReduceBrightColorsController;
+import com.android.systemui.qs.tiles.dialog.BluetoothDialogFactory;
 import com.android.systemui.qs.tiles.dialog.InternetDialogFactory;
 import com.android.systemui.recents.OverviewProxyService;
 import com.android.systemui.screenrecord.RecordingController;
@@ -351,6 +352,7 @@ public class Dependency {
     @Inject Lazy<EdgeBackGestureHandler.Factory> mEdgeBackGestureHandlerFactoryLazy;
     @Inject Lazy<UiEventLogger> mUiEventLogger;
     @Inject Lazy<StatusBarContentInsetsProvider> mContentInsetsProviderLazy;
+    @Inject Lazy<BluetoothDialogFactory> mBluetoothDialogFactory;
     @Inject Lazy<InternetDialogFactory> mInternetDialogFactory;
     @Inject Lazy<FeatureFlags> mFeatureFlagsLazy;
     @Inject Lazy<NotificationSectionsManager> mNotificationSectionsManagerLazy;
@@ -556,6 +558,7 @@ public class Dependency {
         mProviders.put(SystemStatusAnimationScheduler.class,
                 mSystemStatusAnimationSchedulerLazy::get);
         mProviders.put(PrivacyDotViewController.class, mPrivacyDotViewControllerLazy::get);
+        mProviders.put(BluetoothDialogFactory.class, mBluetoothDialogFactory::get);
         mProviders.put(InternetDialogFactory.class, mInternetDialogFactory::get);
         mProviders.put(EdgeBackGestureHandler.Factory.class,
                 mEdgeBackGestureHandlerFactoryLazy::get);

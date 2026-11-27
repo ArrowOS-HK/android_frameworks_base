@@ -62,6 +62,7 @@ import com.android.systemui.qs.customize.QSCustomizerController;
 import com.android.systemui.qs.dagger.QSFragmentComponent;
 import com.android.systemui.qs.footer.ui.binder.FooterActionsViewBinder;
 import com.android.systemui.qs.footer.ui.viewmodel.FooterActionsViewModel;
+import com.android.systemui.qs.inv.InvQsPanelView;
 import com.android.systemui.qs.logging.QSLogger;
 import com.android.systemui.shade.transition.LargeScreenShadeInterpolator;
 import com.android.systemui.statusbar.CommandQueue;
@@ -140,6 +141,10 @@ public class QSFragment extends LifecycleFragment implements QS, CommandQueue.Ca
     private QuickQSPanelController mQuickQSPanelController;
     private QSCustomizerController mQSCustomizerController;
     private FooterActionsViewModel mQSFooterActionsViewModel;
+    @Nullable
+    private InvQsPanelView mInvQsPanelView;
+    @Nullable
+    private View mFooterActionsRoot;
     @Nullable
     private ScrollListener mScrollListener;
     /**
@@ -228,6 +233,8 @@ public class QSFragment extends LifecycleFragment implements QS, CommandQueue.Ca
         bindFooterActionsView(view);
         mFooterActionsController.init();
 
+        mInvQsPanelView = view.findViewById(R.id.invos_qs_panel);
+        mFooterActionsRoot = view.findViewById(R.id.qs_footer_actions);
         mQSPanelScrollView = view.findViewById(R.id.expanded_qs_scroll_view);
         mQSPanelScrollView.addOnLayoutChangeListener(
                 (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
@@ -466,10 +473,14 @@ public class QSFragment extends LifecycleFragment implements QS, CommandQueue.Ca
                 : View.INVISIBLE);
         mHeader.setExpanded((keyguardShowing && !mHeaderAnimating && !mShowCollapsedOnKeyguard)
                 || (mQsExpanded && !mStackScrollerOverscrolling), mQuickQSPanelController);
+        boolean invQs = TileUtils.isInvQsEnabled(getContext());
         boolean qsPanelVisible = !mQsDisabled && expandVisually;
-        boolean footerVisible = qsPanelVisible && (mQsExpanded || !keyguardShowing
+        boolean footerVisible = !invQs && qsPanelVisible && (mQsExpanded || !keyguardShowing
                 || mHeaderAnimating || mShowCollapsedOnKeyguard);
         mFooter.setVisibility(footerVisible ? View.VISIBLE : View.INVISIBLE);
+        if (mFooterActionsRoot != null) {
+            mFooterActionsRoot.setVisibility(invQs ? View.GONE : View.VISIBLE);
+        }
         mQSFooterActionsViewModel.onVisibilityChangeRequested(footerVisible);
         mFooter.setExpanded((keyguardShowing && !mHeaderAnimating && !mShowCollapsedOnKeyguard)
                 || (mQsExpanded && !mStackScrollerOverscrolling));
@@ -682,6 +693,13 @@ public class QSFragment extends LifecycleFragment implements QS, CommandQueue.Ca
 
         if (fullyCollapsed) {
             mQSPanelScrollView.setScrollY(0);
+            if (mInvQsPanelView != null) {
+                mInvQsPanelView.exitEditModeIfNeeded();
+            }
+        }
+        if (mInvQsPanelView != null && TileUtils.isInvQsEnabled(getContext())) {
+            mInvQsPanelView.onNativeQsExpansion(
+                    onKeyguardAndExpanded ? 1f : expansion);
         }
 
         if (!fullyExpanded) {

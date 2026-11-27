@@ -332,6 +332,10 @@ public abstract class QSPanelControllerBase<T extends QSPanel> extends ViewContr
     void setListening(boolean listening) {
         if (mView.isListening() == listening) return;
         mView.setListening(listening);
+        if (mView instanceof QSPanel) {
+            ((QSPanel) mView).setInvQsListening(
+                    listening && TileUtils.isInvQsEnabled(getContext()));
+        }
 
         if (mView.getTileLayout() != null) {
             mQSLogger.logAllTilesChangeListening(listening, mView.getDumpableTag(), mCachedSpecs);
@@ -395,6 +399,9 @@ public abstract class QSPanelControllerBase<T extends QSPanel> extends ViewContr
     }
 
     boolean shouldUseHorizontalLayout() {
+        if (TileUtils.isInvQsEnabled(getContext())) {
+            return false;
+        }
         if (mShouldUseSplitNotificationShade)  {
             return false;
         }

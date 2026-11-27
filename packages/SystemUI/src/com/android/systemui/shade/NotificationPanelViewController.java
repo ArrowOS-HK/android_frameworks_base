@@ -2468,9 +2468,9 @@ public final class NotificationPanelViewController implements Dumpable {
             float qsExpansionFraction;
             if (mSplitShadeEnabled) {
                 qsExpansionFraction = 1;
-            } else if (getKeyguardShowing()) {
-                // On Keyguard, interpolate the QS expansion linearly to the panel expansion
-                qsExpansionFraction = expandedHeight / (getMaxPanelHeight());
+            } else if (getKeyguardShowing() || mQsController.isExtendedSplitQsOnly()) {
+                // Linearly expand QS from pixel 0 when pulling from keyguard or Extended split right side
+                qsExpansionFraction = expandedHeight / Math.max(1f, (float) getMaxPanelHeight());
             } else {
                 // In Shade, interpolate linearly such that QS is closed whenever panel height is
                 // minimum QS expansion + minStackHeight
@@ -2538,7 +2538,8 @@ public final class NotificationPanelViewController implements Dumpable {
                 && !mKeyguardBypassController.getBypassEnabled()) {
             alpha *= mClockPositionResult.clockAlpha;
         }
-        if (mQsController.isExpandImmediate() && !mQsController.getFullyExpanded()) {
+        if (mQsController.isExtendedSplitQsOnly()
+                || (mQsController.isExpandImmediate() && !mQsController.getFullyExpanded())) {
             alpha = 0f;
         }
         mNotificationStackScrollLayoutController.setAlpha(alpha);

@@ -40,6 +40,7 @@ class QuickStatusBarHeaderController extends ViewController<QuickStatusBarHeader
 
     @Override
     protected void onViewAttached() {
+        mView.setInvQsHost(mQuickQSPanelController.mHost);
     }
 
     @Override
@@ -54,6 +55,7 @@ class QuickStatusBarHeaderController extends ViewController<QuickStatusBarHeader
         mListening = listening;
 
         mQuickQSPanelController.setListening(listening);
+        mView.setInvControlsListening(listening);
 
         if (mQuickQSPanelController.switchTileLayout(false)) {
             mView.updateResources();
