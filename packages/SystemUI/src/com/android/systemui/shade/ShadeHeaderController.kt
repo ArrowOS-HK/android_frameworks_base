@@ -401,7 +401,8 @@ constructor(
             v.pivotX = newPivot
             v.pivotY = v.height.toFloat() / 2
 
-            qsCarrierGroup.setPaddingRelative((v.width * v.scaleX).toInt(), 0, 0, 0)
+            val carrierStartPad = if (largeScreenActive) 0 else (v.width * v.scaleX).toInt()
+            qsCarrierGroup.setPaddingRelative(carrierStartPad, 0, 0, 0)
         }
 
         dumpManager.registerDumpable(this)
@@ -483,6 +484,7 @@ constructor(
 
         view.updateAllConstraints(changes)
         updateBatteryMode()
+        updatePosition()
     }
 
     private fun updateBatteryMode() {
@@ -554,20 +556,33 @@ constructor(
             header.progress = if (invQs) 0f else qsExpandedFraction
             updateBatteryMode()
         }
+        val carrierStartPad = if (largeScreenActive) 0 else (clock.width * clock.scaleX).toInt()
+        if (qsCarrierGroup.paddingStart != carrierStartPad) {
+            qsCarrierGroup.setPaddingRelative(carrierStartPad, 0, 0, 0)
+        }
         if (invQs) {
-            val topClockAlpha = (1f - qsExpandedFraction * 2.2f).coerceIn(0f, 1f)
+            val topClockAlpha = if (largeScreenActive) {
+                0f
+            } else {
+                (1f - qsExpandedFraction * 2.2f).coerceIn(0f, 1f)
+            }
             clock.alpha = topClockAlpha
             date.alpha = topClockAlpha
-            // MotionLayout keeps re-applying the scene alpha to @id/date on every frame, so the
-            // stock date would stay visible and duplicate the InvQS header date when QS is fully
-            // expanded. Fade it with visibility as well to guarantee it disappears.
+            // MotionLayout keeps re-applying scene alpha/visibility, so hide both clock and date
+            // explicitly in landscape split-shade and expanded portrait QS to avoid duplicates.
             val topHeaderVisibility = if (topClockAlpha <= 0.05f) View.INVISIBLE else View.VISIBLE
+            if (clock.visibility != topHeaderVisibility) {
+                clock.visibility = topHeaderVisibility
+            }
             if (date.visibility != topHeaderVisibility) {
                 date.visibility = topHeaderVisibility
             }
         } else {
             clock.alpha = 1f
             date.alpha = 1f
+            if (clock.visibility != View.VISIBLE) {
+                clock.visibility = View.VISIBLE
+            }
             if (date.visibility != View.VISIBLE) {
                 date.visibility = View.VISIBLE
             }

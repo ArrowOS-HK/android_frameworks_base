@@ -118,8 +118,12 @@ public class NotificationShadeWindowView extends FrameLayout {
             View child = getChildAt(i);
             if (child.getLayoutParams() instanceof LayoutParams) {
                 LayoutParams lp = (LayoutParams) child.getLayoutParams();
-                mLeftInset = lp.ignoreLeftInset ? 0 : pairInsets.first;
-                mRightInset = lp.ignoreRightInset ? 0 : pairInsets.second;
+                if (!lp.ignoreLeftInset) {
+                    mLeftInset = pairInsets.first;
+                }
+                if (!lp.ignoreRightInset) {
+                    mRightInset = pairInsets.second;
+                }
             }
         }
         applyMargins();
