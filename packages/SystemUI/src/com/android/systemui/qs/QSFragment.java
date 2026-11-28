@@ -394,6 +394,10 @@ public class QSFragment extends LifecycleFragment implements QS, CommandQueue.Ca
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        if (getView() != null && getView().getContext() != null) {
+            getView().getContext().getTheme()
+                    .applyStyle(R.style.Theme_SystemUI_QuickSettings, true);
+        }
         setEditLocation(getView());
         if (newConfig.getLayoutDirection() != mLayoutDirection) {
             mLayoutDirection = newConfig.getLayoutDirection();

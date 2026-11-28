@@ -120,6 +120,7 @@ public class QuickStatusBarHeader extends FrameLayout {
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        mInvControlsDirty = true;
         updateResources();
     }
 

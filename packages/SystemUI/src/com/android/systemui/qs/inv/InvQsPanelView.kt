@@ -259,6 +259,7 @@ class InvQsPanelView @JvmOverloads constructor(
             config.ensureControl(InvControlId.CUSTOM_IMAGE)
         }
         rebuildPanel()
+        applyThemeColors()
         if (isShown && TileUtils.isInvQsEnabled(context)) {
             setListening(true)
         }
@@ -292,15 +293,50 @@ class InvQsPanelView @JvmOverloads constructor(
 
     override fun onConfigChanged(newConfig: Configuration?) {
         applyResponsiveOrientation()
+        applyThemeColors()
         rebuildPanel()
     }
 
     override fun onThemeChanged() {
+        settingsSheet?.dismiss()
+        applyThemeColors()
         rebuildPanel()
     }
 
     override fun onUiModeChanged() {
+        settingsSheet?.dismiss()
+        applyThemeColors()
         rebuildPanel()
+    }
+
+    private fun applyThemeColors() {
+        (invHeaderClock as? TextView)?.setTextColor(
+            ContextCompat.getColor(context, R.color.inv_text_primary)
+        )
+        val secondaryText = ContextCompat.getColor(context, R.color.inv_text_secondary)
+        (invHeaderDate as? TextView)?.setTextColor(secondaryText)
+        (txtEditHint as? TextView)?.setTextColor(secondaryText)
+
+        val primaryIcon = ColorStateList.valueOf(
+            ContextCompat.getColor(context, R.color.inv_icon_primary)
+        )
+        btnEdit.setBackgroundResource(R.drawable.inv_bg_header_btn)
+        btnEdit.imageTintList = primaryIcon
+        btnMore.setBackgroundResource(R.drawable.inv_bg_header_btn)
+        btnMore.imageTintList = primaryIcon
+        btnReset.setBackgroundResource(R.drawable.inv_bg_header_btn)
+        (btnReset as? ImageView)?.imageTintList = primaryIcon
+
+        btnSettings.setBackgroundResource(R.drawable.inv_bg_header_btn)
+        for (i in 0 until btnSettings.childCount) {
+            (btnSettings.getChildAt(i) as? ImageView)?.imageTintList = primaryIcon
+        }
+
+        val onAccent = ContextCompat.getColor(context, R.color.inv_icon_on_accent)
+        btnPanelSettings.setBackgroundResource(R.drawable.inv_bg_btn_secondary_pill)
+        (btnPanelSettings as? TextView)?.setTextColor(onAccent)
+        btnDone.setBackgroundResource(R.drawable.inv_bg_btn_done)
+        (btnDone as? TextView)?.setTextColor(onAccent)
     }
 
     private fun registerCustomContentObservers() {

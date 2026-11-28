@@ -294,6 +294,7 @@ constructor(
             }
 
             override fun onUiModeChanged() {
+                context.theme.applyStyle(R.style.QSHeaderTheme, true)
                 updateResources()
             }
 

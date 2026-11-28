@@ -21,6 +21,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.database.ContentObserver
 import android.hardware.display.BrightnessInfo
 import android.hardware.display.DisplayManager
@@ -103,11 +104,16 @@ class InvSlidersController(private val context: Context) {
     private val pendingVolumeStep = AtomicInteger(-1)
     private val volumeWorkerScheduled = AtomicInteger(0)
 
-    private val iconOnAccent by lazy { ContextCompat.getColor(context, R.color.inv_icon_on_accent) }
-    private val iconPrimary by lazy { ContextCompat.getColor(context, R.color.inv_icon_primary) }
-    private val textOnAccent by lazy { ContextCompat.getColor(context, R.color.inv_text_on_accent) }
-    private val textPrimary by lazy { ContextCompat.getColor(context, R.color.inv_text_primary) }
-    private val textSecondary by lazy { ContextCompat.getColor(context, R.color.inv_text_secondary) }
+    private val iconOnAccent: Int
+        get() = ContextCompat.getColor(context, R.color.inv_icon_on_accent)
+    private val iconPrimary: Int
+        get() = ContextCompat.getColor(context, R.color.inv_icon_primary)
+    private val textOnAccent: Int
+        get() = ContextCompat.getColor(context, R.color.inv_text_on_accent)
+    private val textPrimary: Int
+        get() = ContextCompat.getColor(context, R.color.inv_text_primary)
+    private val textSecondary: Int
+        get() = ContextCompat.getColor(context, R.color.inv_text_secondary)
 
     private val brightnessObserver = object : ContentObserver(handler) {
         override fun onChange(selfChange: Boolean, uri: Uri?) {
@@ -204,8 +210,10 @@ class InvSlidersController(private val context: Context) {
     }
 
     private fun applyCornerStyle(binding: SliderBinding, square: Boolean) {
-        if (binding.body.getTag(R.id.slider_body) == square) return
-        binding.body.setTag(R.id.slider_body, square)
+        val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        val styleKey = (if (square) 1 else 0) or nightMode
+        if (binding.body.getTag(R.id.slider_body) == styleKey) return
+        binding.body.setTag(R.id.slider_body, styleKey)
         binding.body.setBackgroundResource(
             if (square) R.drawable.inv_bg_slider_track_square else R.drawable.inv_bg_slider_track
         )

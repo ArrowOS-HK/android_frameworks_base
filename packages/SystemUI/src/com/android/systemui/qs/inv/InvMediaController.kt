@@ -18,6 +18,7 @@ package com.android.systemui.qs.inv
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -542,7 +543,8 @@ class InvMediaController(private val context: Context) {
         // Skip the render entirely when nothing visible changed. The periodic 5s sync otherwise
         // re-applies backgrounds and resources on every tick, forcing a relayout of the media
         // card and restarting the artist marquee, which shows up as a stutter.
-        val signature = "$titleText\u0000$artistText\u0000$isPlaying\u0000$hasSession\u0000" +
+        val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        val signature = "$titleText\u0000$artistText\u0000$isPlaying\u0000$hasSession\u0000$nightMode\u0000" +
                 (validArt?.let { System.identityHashCode(it) } ?: 0)
         if (signature == lastRenderSignature) {
             return

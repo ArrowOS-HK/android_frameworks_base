@@ -24,6 +24,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.Network
@@ -405,12 +406,16 @@ class InvControlGridBinder(
         refreshDynamicValues()
     }
 
+    private fun uiNightMode(): Int =
+        context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+
     private fun unifiedViewSignature(
         item: InvGridPacker.PlacedItem<String>,
         editMode: Boolean,
         showLabels: Boolean
     ): String {
         val token = item.data
+        val nightMode = uiNightMode()
         val ctrl = InvPanelConfig.parseControlId(token)
         if (ctrl != null) {
             return when (ctrl) {
@@ -420,11 +425,11 @@ class InvControlGridBinder(
                 InvControlId.VOLUME_H,
                 InvControlId.BRIGHTNESS_V,
                 InvControlId.VOLUME_V,
-                InvControlId.CUSTOM_NAME -> "$token:$editMode"
-                else -> "$token:${if (item.colSpan >= 2) "pill" else "circle"}:$editMode"
+                InvControlId.CUSTOM_NAME -> "$token:$editMode:$nightMode"
+                else -> "$token:${if (item.colSpan >= 2) "pill" else "circle"}:$editMode:$nightMode"
             }
         }
-        return "$token:${if (item.colSpan >= 2) "pill" else "circle"}:$editMode:$showLabels"
+        return "$token:${if (item.colSpan >= 2) "pill" else "circle"}:$editMode:$showLabels:$nightMode"
     }
 
     /**
@@ -768,7 +773,7 @@ class InvControlGridBinder(
                     else -> "Off"
                 }
         } else null
-        val renderKey = "${tile.tileSpec}:${tileState}:${isWide}:$square:$labelText:$secondaryText:${state.icon}"
+        val renderKey = "${tile.tileSpec}:${tileState}:${isWide}:$square:$labelText:$secondaryText:${state.icon}:${uiNightMode()}"
         if (bodyView.getTag(R.id.inv_grid_item_signature) == renderKey) {
             return
         }
