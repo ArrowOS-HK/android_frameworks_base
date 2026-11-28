@@ -34,7 +34,7 @@
     </style>
 
     <style name="Switch.SettingsLib" parent="@android:style/Widget.Material.CompoundButton.Switch">
-        <item name="android:switchMinWidth">52dp</item>
+        <item name="android:switchMinWidth">@dimen/settingslib_switch_track_width</item>
         <item name="android:minHeight">@dimen/settingslib_preferred_minimum_touch_target</item>
         <item name="android:track">@drawable/settingslib_switch_track</item>
         <item name="android:thumb">@drawable/settingslib_switch_thumb</item>

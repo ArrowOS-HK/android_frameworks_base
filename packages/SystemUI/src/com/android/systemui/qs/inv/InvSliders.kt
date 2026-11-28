@@ -130,9 +130,10 @@ class InvSlidersController(private val context: Context) {
         bindings.clear()
     }
 
-    fun bindBrightness(view: View, vertical: Boolean, editMode: Boolean = false) {
+    fun bindBrightness(view: View, vertical: Boolean, editMode: Boolean = false, square: Boolean = false) {
         val binding = extractBinding(view, vertical, isBrightness = true) ?: return
         bindings.add(binding)
+        applyCornerStyle(binding, square)
         cachedAutoBrightness = queryAutoBrightnessEnabled()
         if (editMode) {
             freezeForEdit(binding)
@@ -166,9 +167,10 @@ class InvSlidersController(private val context: Context) {
         updateFillAndText(binding, readBrightnessFraction())
     }
 
-    fun bindVolume(view: View, vertical: Boolean, editMode: Boolean = false) {
+    fun bindVolume(view: View, vertical: Boolean, editMode: Boolean = false, square: Boolean = false) {
         val binding = extractBinding(view, vertical, isBrightness = false) ?: return
         bindings.add(binding)
+        applyCornerStyle(binding, square)
         if (editMode) {
             freezeForEdit(binding)
         } else {
@@ -201,12 +203,33 @@ class InvSlidersController(private val context: Context) {
         updateFillAndText(binding, readVolumeFraction())
     }
 
+    private fun applyCornerStyle(binding: SliderBinding, square: Boolean) {
+        if (binding.body.getTag(R.id.slider_body) == square) return
+        binding.body.setTag(R.id.slider_body, square)
+        binding.body.setBackgroundResource(
+            if (square) R.drawable.inv_bg_slider_track_square else R.drawable.inv_bg_slider_track
+        )
+        val fillRes = when {
+            binding.vertical && square -> R.drawable.inv_bg_slider_fill_vertical_square
+            binding.vertical -> R.drawable.inv_bg_slider_fill_vertical
+            square -> R.drawable.inv_bg_slider_fill_square
+            else -> R.drawable.inv_bg_slider_fill
+        }
+        binding.fill.setBackgroundResource(fillRes)
+    }
+
     private fun freezeForEdit(binding: SliderBinding) {
         binding.body.setOnTouchListener(null)
+        binding.body.setOnClickListener(null)
+        binding.body.setOnLongClickListener(null)
         binding.body.isClickable = false
+        binding.body.isLongClickable = false
         binding.body.isFocusable = false
         binding.icon.setOnClickListener(null)
+        binding.icon.setOnLongClickListener(null)
         binding.icon.isClickable = false
+        binding.icon.isLongClickable = false
+        binding.icon.isFocusable = false
         binding.root.setOnLongClickListener(null)
     }
 

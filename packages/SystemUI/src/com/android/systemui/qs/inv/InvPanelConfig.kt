@@ -544,6 +544,7 @@ class InvPanelConfig(private val context: Context) {
             .putString(KEY_UNIFIED_ITEMS, unified.joinToString(","))
             .remove(KEY_CONTROL_SPANS)
             .remove(KEY_TILE_SPANS)
+            .remove(KEY_TILE_SQUARES)
             .putBoolean(KEY_SHOW_LABELS, false)
             .putBoolean(KEY_CUSTOM_IMAGE_HIDDEN, false)
             .putInt(KEY_QQS_CONTROL_COUNT, 4)

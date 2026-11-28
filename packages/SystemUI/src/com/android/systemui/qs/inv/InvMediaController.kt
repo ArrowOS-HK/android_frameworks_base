@@ -68,6 +68,7 @@ class InvMediaController(private val context: Context) {
     private var lastBlurGeneration = 0
     private var lastRenderSignature: String? = null
     private var listening = false
+    private var useSquareCorners = false
 
     private var mediaBody: LaunchableFrameLayout? = null
     private var mediaContent: View? = null
@@ -109,10 +110,17 @@ class InvMediaController(private val context: Context) {
         }
     }
 
-    fun bind(view: View, rowSpan: Int, colSpan: Int, editMode: Boolean = false) {
+    fun bind(
+        view: View,
+        rowSpan: Int,
+        colSpan: Int,
+        editMode: Boolean = false,
+        square: Boolean = false
+    ) {
         rootView = view
         currentRowSpan = rowSpan
         currentColSpan = colSpan
+        useSquareCorners = square
         // Views are recreated on rebind, so drop cached state to force a fresh render.
         lastArtwork = null
         lastRenderSignature = null
@@ -440,8 +448,10 @@ class InvMediaController(private val context: Context) {
         val appButton = rootView?.findViewById<View>(R.id.media_app_button)
         listOf<View?>(mediaBody, mediaOutputBtn, mediaPrev, mediaPlay, mediaNext, appButton).forEach { v ->
             v?.setOnClickListener(null)
+            v?.setOnLongClickListener(null)
             v?.setOnTouchListener(null)
             v?.isClickable = false
+            v?.isLongClickable = false
             v?.isFocusable = false
         }
     }
@@ -553,8 +563,13 @@ class InvMediaController(private val context: Context) {
         val white = ContextCompat.getColor(context, R.color.inv_media_full_art_control_foreground)
 
         if (validArt != null) {
-            mediaBody?.setBackgroundResource(R.drawable.inv_bg_media)
+            mediaBody?.setBackgroundResource(
+                if (useSquareCorners) R.drawable.inv_bg_media_square else R.drawable.inv_bg_media
+            )
             mediaBlurBg?.visibility = View.VISIBLE
+            mediaScrim?.setBackgroundResource(
+                if (useSquareCorners) R.drawable.inv_bg_media_scrim_square else R.drawable.inv_bg_media_scrim
+            )
             mediaScrim?.visibility = View.VISIBLE
             if (lastArtwork !== validArt) {
                 lastArtwork = validArt
@@ -579,7 +594,9 @@ class InvMediaController(private val context: Context) {
             mediaPlay?.setBackgroundResource(R.drawable.inv_bg_media_play_button)
         } else {
             lastArtwork = null
-            mediaBody?.setBackgroundResource(R.drawable.inv_bg_media_empty)
+            mediaBody?.setBackgroundResource(
+                if (useSquareCorners) R.drawable.inv_bg_media_empty_square else R.drawable.inv_bg_media_empty
+            )
             mediaBlurBg?.visibility = View.GONE
             mediaScrim?.visibility = View.GONE
             mediaArt?.visibility = View.GONE

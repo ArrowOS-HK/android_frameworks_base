@@ -130,7 +130,8 @@ class InvControlGridBinder(
 
     private inner class ControlSurfaceBinding(
         val pill: PillBinding? = null,
-        val circle: CircleBinding? = null
+        val circle: CircleBinding? = null,
+        private val squareKey: String? = null
     ) {
         val actionView: View? get() = pill?.root ?: circle?.launchRoot
 
@@ -141,8 +142,13 @@ class InvControlGridBinder(
             subtitle: String,
             showSubtitle: Boolean = true
         ) {
+            val square = squareKey != null && config.isTileSquare(squareKey)
             if (pill != null) {
-                val bgRes = if (active) R.drawable.inv_bg_pill_on else R.drawable.inv_bg_pill
+                val bgRes = if (active) {
+                    if (square) R.drawable.inv_bg_pill_on_square else R.drawable.inv_bg_pill_on
+                } else {
+                    if (square) R.drawable.inv_bg_pill_square else R.drawable.inv_bg_pill
+                }
                 val fg = ContextCompat.getColor(
                     context,
                     if (active) R.color.inv_text_on_accent else R.color.inv_text_primary
@@ -161,7 +167,11 @@ class InvControlGridBinder(
                 pill.summary.visibility = if (showSubtitle) View.VISIBLE else View.GONE
             } else if (circle != null) {
                 circle.launchRoot.setBackgroundResource(
-                    if (active) R.drawable.inv_bg_tile_on else R.drawable.inv_bg_tile_off
+                    if (active) {
+                        if (square) R.drawable.inv_bg_tile_on_square else R.drawable.inv_bg_tile_on
+                    } else {
+                        if (square) R.drawable.inv_bg_tile_off_square else R.drawable.inv_bg_tile_off
+                    }
                 )
                 val tint = ContextCompat.getColor(
                     context,
@@ -455,7 +465,13 @@ class InvControlGridBinder(
         for (item in placed) {
             val view = viewByToken[item.data] ?: continue
             if (InvPanelConfig.parseControlId(item.data) == InvControlId.MEDIA) {
-                media.bind(view, item.rowSpan, item.colSpan, editMode = true)
+                media.bind(
+                    view,
+                    item.rowSpan,
+                    item.colSpan,
+                    editMode = true,
+                    square = config.isTileSquare(item.data)
+                )
             }
             val isLabeledSmallTile = InvPanelConfig.parseTileSpec(item.data) != null && item.colSpan < 2 && showLabels
             val rowSpec = if (item.rowSpan == 1 && showLabels) {
@@ -556,6 +572,54 @@ class InvControlGridBinder(
         sliders.refreshAll()
     }
 
+    private fun bindControlView(
+        view: View,
+        controlId: InvControlId,
+        item: InvGridPacker.PlacedItem<String>,
+        editMode: Boolean,
+        tileSize: Int
+    ) {
+        val square = config.isTileSquare(item.data)
+        when (controlId) {
+            InvControlId.MEDIA ->
+                media.bind(view, item.rowSpan, item.colSpan, editMode = editMode, square = square)
+            InvControlId.BRIGHTNESS_V ->
+                sliders.bindBrightness(view, vertical = true, editMode = editMode, square = square)
+            InvControlId.VOLUME_V ->
+                sliders.bindVolume(view, vertical = true, editMode = editMode, square = square)
+            InvControlId.BRIGHTNESS_H ->
+                sliders.bindBrightness(view, vertical = false, editMode = editMode, square = square)
+            InvControlId.VOLUME_H ->
+                sliders.bindVolume(view, vertical = false, editMode = editMode, square = square)
+            InvControlId.CUSTOM_NAME -> {
+                customNameTitle = view.findViewById(R.id.custom_name_title)
+                customNameSubtitle = view.findViewById(R.id.custom_name_subtitle)
+                view.findViewById<View>(R.id.custom_name_body)?.setBackgroundResource(
+                    if (square) R.drawable.inv_bg_pill_square else R.drawable.inv_bg_pill
+                )
+                if (!editMode) {
+                    view.isClickable = true
+                    view.setOnClickListener { openCustomControlsSettings() }
+                } else {
+                    view.setOnClickListener(null)
+                }
+            }
+            InvControlId.CUSTOM_IMAGE -> {
+                customImageView = view.findViewById(R.id.custom_image_view)
+                val imgBg = if (square) R.drawable.inv_bg_media_square else R.drawable.inv_bg_media
+                view.findViewById<View>(R.id.custom_image_body)?.setBackgroundResource(imgBg)
+                customImageView?.setBackgroundResource(imgBg)
+                if (!editMode) {
+                    view.isClickable = true
+                    view.setOnClickListener { openCustomControlsSettings() }
+                } else {
+                    view.setOnClickListener(null)
+                }
+            }
+            else -> bindToggleableControl(view, controlId, item.colSpan, editMode, tileSize)
+        }
+    }
+
     private fun rebindExistingUnifiedView(
         view: View,
         item: InvGridPacker.PlacedItem<String>,
@@ -571,31 +635,7 @@ class InvControlGridBinder(
             bindUnifiedTile(view, tile, item.colSpan, editMode, showLabels, tileSize)
             return
         }
-        when (controlId) {
-            InvControlId.MEDIA -> media.bind(view, item.rowSpan, item.colSpan, editMode = editMode)
-            InvControlId.BRIGHTNESS_V -> sliders.bindBrightness(view, vertical = true, editMode = editMode)
-            InvControlId.VOLUME_V -> sliders.bindVolume(view, vertical = true, editMode = editMode)
-            InvControlId.BRIGHTNESS_H -> sliders.bindBrightness(view, vertical = false, editMode = editMode)
-            InvControlId.VOLUME_H -> sliders.bindVolume(view, vertical = false, editMode = editMode)
-            InvControlId.CUSTOM_NAME -> {
-                customNameTitle = view.findViewById(R.id.custom_name_title)
-                customNameSubtitle = view.findViewById(R.id.custom_name_subtitle)
-                if (!editMode) {
-                    view.setOnClickListener { openCustomControlsSettings() }
-                } else {
-                    view.setOnClickListener(null)
-                }
-            }
-            InvControlId.CUSTOM_IMAGE -> {
-                customImageView = view.findViewById(R.id.custom_image_view)
-                if (!editMode) {
-                    view.setOnClickListener { openCustomControlsSettings() }
-                } else {
-                    view.setOnClickListener(null)
-                }
-            }
-            else -> bindToggleableControl(view, controlId, item.colSpan, editMode, tileSize)
-        }
+        bindControlView(view, controlId, item, editMode, tileSize)
     }
 
     private fun createUnifiedView(
@@ -615,56 +655,17 @@ class InvControlGridBinder(
             bindUnifiedTile(view, tile, item.colSpan, editMode, showLabels, tileSize)
             return view
         }
-        return when (controlId) {
-            InvControlId.MEDIA -> {
-                val view = inflater.inflate(R.layout.inv_item_media, parent, false)
-                media.bind(view, item.rowSpan, item.colSpan, editMode = editMode)
-                view
-            }
-            InvControlId.BRIGHTNESS_V -> {
-                val view = inflater.inflate(R.layout.inv_item_slider_vertical, parent, false)
-                sliders.bindBrightness(view, vertical = true, editMode = editMode)
-                view
-            }
-            InvControlId.VOLUME_V -> {
-                val view = inflater.inflate(R.layout.inv_item_slider_vertical, parent, false)
-                sliders.bindVolume(view, vertical = true, editMode = editMode)
-                view
-            }
-            InvControlId.BRIGHTNESS_H -> {
-                val view = inflater.inflate(R.layout.inv_item_slider_horizontal, parent, false)
-                sliders.bindBrightness(view, vertical = false, editMode = editMode)
-                view
-            }
-            InvControlId.VOLUME_H -> {
-                val view = inflater.inflate(R.layout.inv_item_slider_horizontal, parent, false)
-                sliders.bindVolume(view, vertical = false, editMode = editMode)
-                view
-            }
-            InvControlId.CUSTOM_NAME -> {
-                val view = inflater.inflate(R.layout.inv_item_custom_name, parent, false)
-                customNameTitle = view.findViewById(R.id.custom_name_title)
-                customNameSubtitle = view.findViewById(R.id.custom_name_subtitle)
-                if (!editMode) {
-                    view.setOnClickListener { openCustomControlsSettings() }
-                }
-                view
-            }
-            InvControlId.CUSTOM_IMAGE -> {
-                val view = inflater.inflate(R.layout.inv_item_custom_image, parent, false)
-                customImageView = view.findViewById(R.id.custom_image_view)
-                if (!editMode) {
-                    view.setOnClickListener { openCustomControlsSettings() }
-                }
-                view
-            }
-            else -> {
-                val layoutRes = if (item.colSpan >= 2) R.layout.inv_item_pill else R.layout.inv_item_control_circle
-                val view = inflater.inflate(layoutRes, parent, false)
-                bindToggleableControl(view, controlId, item.colSpan, editMode, tileSize)
-                view
-            }
+        val layoutRes = when (controlId) {
+            InvControlId.MEDIA -> R.layout.inv_item_media
+            InvControlId.BRIGHTNESS_V, InvControlId.VOLUME_V -> R.layout.inv_item_slider_vertical
+            InvControlId.BRIGHTNESS_H, InvControlId.VOLUME_H -> R.layout.inv_item_slider_horizontal
+            InvControlId.CUSTOM_NAME -> R.layout.inv_item_custom_name
+            InvControlId.CUSTOM_IMAGE -> R.layout.inv_item_custom_image
+            else -> if (item.colSpan >= 2) R.layout.inv_item_pill else R.layout.inv_item_control_circle
         }
+        val view = inflater.inflate(layoutRes, parent, false)
+        bindControlView(view, controlId, item, editMode, tileSize)
+        return view
     }
 
     private fun bindUnifiedTile(
@@ -703,6 +704,7 @@ class InvControlGridBinder(
                 }
                 isClickable = !editMode
                 isFocusable = !editMode
+                isLongClickable = !editMode
             }
             (circle.parent as? View)?.let { slotFrame ->
                 slotFrame.layoutParams = slotFrame.layoutParams.apply {
@@ -841,6 +843,7 @@ class InvControlGridBinder(
         editMode: Boolean,
         tileSize: Int
     ) {
+        val squareKey = InvPanelConfig.controlToken(controlId)
         val surface = if (colSpan >= 2) {
             val root = view as LaunchableFrameLayout
             val body = root.findViewById<View>(R.id.pill_body)
@@ -851,7 +854,8 @@ class InvControlGridBinder(
             root.isFocusable = !editMode
             body?.isClickable = false
             body?.isFocusable = false
-            ControlSurfaceBinding(pill = PillBinding(root, body, icon, label, summary))
+            body?.isLongClickable = false
+            ControlSurfaceBinding(pill = PillBinding(root, body, icon, label, summary), squareKey = squareKey)
         } else {
             val launchBody = view.findViewById<LaunchableFrameLayout>(R.id.circle_body)
             (launchBody.layoutParams as? FrameLayout.LayoutParams)?.let { clp ->
@@ -863,7 +867,8 @@ class InvControlGridBinder(
             val icon = view.findViewById<ImageView>(R.id.circle_icon)
             launchBody.isClickable = !editMode
             launchBody.isFocusable = !editMode
-            ControlSurfaceBinding(circle = CircleBinding(launchBody, icon))
+            launchBody.isLongClickable = !editMode
+            ControlSurfaceBinding(circle = CircleBinding(launchBody, icon), squareKey = squareKey)
         }
 
         controlBindings[controlId] = surface
@@ -1007,11 +1012,29 @@ class InvControlGridBinder(
             }
         }
 
+        val isToggleableControl = controlId != null &&
+            controlId != InvControlId.MEDIA &&
+            controlId != InvControlId.BRIGHTNESS_H &&
+            controlId != InvControlId.VOLUME_H &&
+            controlId != InvControlId.BRIGHTNESS_V &&
+            controlId != InvControlId.VOLUME_V &&
+            controlId != InvControlId.CUSTOM_IMAGE &&
+            controlId != InvControlId.CUSTOM_NAME
+
         if (!editMode) {
             badge?.visibility = View.GONE
             mediaHandle?.visibility = View.GONE
             tileHandle?.visibility = View.GONE
             view.setOnDragListener(null)
+            val usesRootInNormalMode = controlId == InvControlId.CUSTOM_NAME ||
+                controlId == InvControlId.CUSTOM_IMAGE ||
+                (item.colSpan >= 2 && (tileSpec != null || isToggleableControl))
+            if (!usesRootInNormalMode) {
+                view.setOnClickListener(null)
+                view.isClickable = false
+                view.setOnLongClickListener(null)
+                view.isLongClickable = false
+            }
             return
         }
 
@@ -1024,22 +1047,64 @@ class InvControlGridBinder(
             onConfigChanged()
         }
 
-        if (tileSpec != null) {
-            // Double-tap a tile in edit mode to toggle between the default round corners and a
-            // slightly squarer style. Persisted per tile spec.
+        val squareKey = tileSpec ?: controlId?.let { InvPanelConfig.controlToken(it) }
+
+        val dragStarter = View.OnLongClickListener { _ ->
+            if (!view.isAttachedToWindow || view.width <= 0 || view.height <= 0) {
+                return@OnLongClickListener false
+            }
+            try {
+                view.startDragAndDrop(
+                    ClipData.newPlainText("inv_unified", token),
+                    View.DragShadowBuilder(view),
+                    UnifiedDragPayload(token),
+                    0
+                )
+            } catch (_: Throwable) {
+                false
+            }
+        }
+        view.setOnLongClickListener(dragStarter)
+
+        // Ensure inner surface views don't intercept single taps or long clicks in edit mode
+        // so both double-tap corner toggling and long-press drag route cleanly through `view`.
+        listOf(
+            R.id.pill_body,
+            R.id.circle_body,
+            R.id.tile_circle,
+            R.id.slider_body,
+            R.id.media_body,
+            R.id.custom_image_body,
+            R.id.custom_name_body
+        ).forEach { id ->
+            view.findViewById<View>(id)?.apply {
+                setOnClickListener(null)
+                setOnLongClickListener(null)
+                isClickable = false
+                isLongClickable = false
+                isFocusable = false
+            }
+        }
+
+        if (squareKey != null) {
             view.setOnClickListener(object : View.OnClickListener {
                 private var lastTapAt = 0L
                 override fun onClick(v: View) {
                     val now = SystemClock.elapsedRealtime()
-                    if (now - lastTapAt <= 320L) {
+                    if (now - lastTapAt <= 380L) {
                         lastTapAt = 0L
-                        config.toggleTileSquare(tileSpec)
+                        v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        config.toggleTileSquare(squareKey)
+                        InvGridAnimator.springPopIn(v)
                         onConfigChanged()
                     } else {
                         lastTapAt = now
                     }
                 }
             })
+        } else {
+            view.setOnClickListener(null)
+            view.isClickable = false
         }
 
         if (controlId != null) {
@@ -1059,30 +1124,6 @@ class InvControlGridBinder(
         } else {
             tileHandle?.visibility = View.GONE
         }
-
-        val dragStarter = View.OnLongClickListener { _ ->
-            if (!view.isAttachedToWindow || view.width <= 0 || view.height <= 0) {
-                return@OnLongClickListener false
-            }
-            try {
-                view.startDragAndDrop(
-                    ClipData.newPlainText("inv_unified", token),
-                    View.DragShadowBuilder(view),
-                    UnifiedDragPayload(token),
-                    0
-                )
-            } catch (_: Throwable) {
-                false
-            }
-        }
-        view.setOnLongClickListener(dragStarter)
-        view.findViewById<View>(R.id.pill_body)?.setOnLongClickListener(dragStarter)
-        view.findViewById<View>(R.id.circle_body)?.setOnLongClickListener(dragStarter)
-        view.findViewById<View>(R.id.tile_circle)?.setOnLongClickListener(dragStarter)
-        view.findViewById<View>(R.id.slider_body)?.setOnLongClickListener(dragStarter)
-        view.findViewById<View>(R.id.media_body)?.setOnLongClickListener(dragStarter)
-        view.findViewById<View>(R.id.custom_image_body)?.setOnLongClickListener(dragStarter)
-        view.findViewById<View>(R.id.custom_name_body)?.setOnLongClickListener(dragStarter)
 
         view.setOnDragListener { target, event ->
             when (event.action) {
