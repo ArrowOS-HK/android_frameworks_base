@@ -345,7 +345,8 @@ constructor(
             v.pivotX = newPivot
             v.pivotY = v.height.toFloat() / 2
 
-            qsCarrierGroup.setPaddingRelative((v.width * v.scaleX).toInt(), 0, 0, 0)
+            val carrierStartPad = if (largeScreenActive) 0 else (v.width * v.scaleX).toInt()
+            qsCarrierGroup.setPaddingRelative(carrierStartPad, 0, 0, 0)
         }
 
         dumpManager.registerDumpable(this)
@@ -492,6 +493,10 @@ constructor(
             logInstantEvent("updatePosition: $qsExpandedFraction")
             header.progress = qsExpandedFraction
             updateBatteryMode()
+        }
+        val carrierStartPad = if (largeScreenActive) 0 else (clock.width * clock.scaleX).toInt()
+        if (qsCarrierGroup.paddingStart != carrierStartPad) {
+            qsCarrierGroup.setPaddingRelative(carrierStartPad, 0, 0, 0)
         }
         setBatteryClickable(qsExpandedFraction == 1f || !privacyChipVisible)
     }

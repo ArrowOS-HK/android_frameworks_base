@@ -59,6 +59,7 @@
         android:layout_height="match_parent"
         android:importantForAccessibility="no"
         sysui:ignoreRightInset="true"
+        sysui:ignoreLeftInset="true"
     />
 
     <com.android.systemui.statusbar.LightRevealScrim
